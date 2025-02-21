@@ -13,6 +13,8 @@ contract FundMeTest is Test {
     uint256 constant SEND_VALUE = 0.1 ether;
     uint256 constant STARTING_BALANCE = 10 ether;
 
+    // uint256 constant GAS_PRICE = 1;
+
     function setUp() external {
         // fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         DeployFundMe deployFundMe = new DeployFundMe();
@@ -83,7 +85,10 @@ contract FundMeTest is Test {
         uint256 endingOwnerBalance = fundMe.getOwner().balance;
         uint256 endingFundMeBalance = address(fundMe).balance;
         assertEq(endingFundMeBalance, 0);
-        assertEq(startingOwnerBalance + startingFundMeBalance, endingOwnerBalance);
+        assertEq(
+            startingOwnerBalance + startingFundMeBalance,
+            endingOwnerBalance
+        );
     }
 
     function testWithdrawFromMultipleFunders() public funded {
@@ -101,8 +106,14 @@ contract FundMeTest is Test {
         }
 
         // Act
+        // uint256 gasStart = gasleft();
+        // vm.txGasPrice(GAS_PRICE);
         uint256 startingOwnerBalance = fundMe.getOwner().balance;
         uint256 startingFundMeBalance = address(fundMe).balance;
+        // uint256 gasEnd = gasleft();
+
+        // uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        // console.log(gasUsed);
 
         vm.startPrank(fundMe.getOwner());
         fundMe.withdraw();
@@ -113,6 +124,48 @@ contract FundMeTest is Test {
         uint256 endingFundMeBalance = address(fundMe).balance;
 
         assertEq(endingFundMeBalance, 0);
-        assertEq(startingOwnerBalance + startingFundMeBalance, endingOwnerBalance);
+        assertEq(
+            startingOwnerBalance + startingFundMeBalance,
+            endingOwnerBalance
+        );
+    }
+
+    function testWithdrawFromMultipleFundersCheaper() public funded {
+        // Arrange
+        uint160 numbersOfFunders = 10;
+        uint160 startingFunderIndex = 1;
+
+        for (uint160 i = startingFunderIndex; i < numbersOfFunders; i++) {
+            // vm.prank new address
+            // vm.deal fund the new address
+            hoax(address(i), SEND_VALUE);
+
+            // fund the fundme
+            fundMe.fund{value: SEND_VALUE}();
+        }
+
+        // Act
+        // uint256 gasStart = gasleft();
+        // vm.txGasPrice(GAS_PRICE);
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMeBalance = address(fundMe).balance;
+        // uint256 gasEnd = gasleft();
+
+        // uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        // console.log(gasUsed);
+
+        vm.startPrank(fundMe.getOwner());
+        fundMe.cheaperWithdraw();
+        vm.stopPrank();
+
+        //Assert
+        uint256 endingOwnerBalance = fundMe.getOwner().balance;
+        uint256 endingFundMeBalance = address(fundMe).balance;
+
+        assertEq(endingFundMeBalance, 0);
+        assertEq(
+            startingOwnerBalance + startingFundMeBalance,
+            endingOwnerBalance
+        );
     }
 }

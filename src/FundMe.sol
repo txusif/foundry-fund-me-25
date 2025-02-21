@@ -26,7 +26,10 @@ contract FundMe {
     }
 
     function fund() public payable {
-        require(msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD, "You need to spend more ETH!");
+        require(
+            msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
+            "You need to spend more ETH!"
+        );
         // require(PriceConverter.getConversionRate(msg.value) >= MINIMUM_USD, "You need to spend more ETH!");
         s_addressToAmountFunded[msg.sender] += msg.value;
         s_funders.push(msg.sender);
@@ -43,7 +46,11 @@ contract FundMe {
     }
 
     function withdraw() public onlyOwner {
-        for (uint256 funderIndex = 0; funderIndex < s_funders.length; funderIndex++) {
+        for (
+            uint256 funderIndex = 0;
+            funderIndex < s_funders.length;
+            funderIndex++
+        ) {
             address funder = s_funders[funderIndex];
             s_addressToAmountFunded[funder] = 0;
         }
@@ -56,7 +63,28 @@ contract FundMe {
         // require(sendSuccess, "Send failed");
 
         // call
-        (bool callSuccess,) = payable(msg.sender).call{value: address(this).balance}("");
+        (bool callSuccess, ) = payable(msg.sender).call{
+            value: address(this).balance
+        }("");
+        require(callSuccess, "Call failed");
+    }
+
+    function cheaperWithdraw() public onlyOwner {
+        uint256 fundersLength = s_funders.length;
+
+        for (
+            uint256 funderIndex = 0;
+            funderIndex < fundersLength;
+            funderIndex++
+        ) {
+            address funder = s_funders[funderIndex];
+            s_addressToAmountFunded[funder] = 0;
+        }
+        s_funders = new address[](0);
+
+        (bool callSuccess, ) = payable(msg.sender).call{
+            value: address(this).balance
+        }("");
         require(callSuccess, "Call failed");
     }
 
@@ -83,7 +111,9 @@ contract FundMe {
     /**
      * View/Pure Functions (Getters)
      */
-    function getAddressToAmountFunded(address _address) external view returns (uint256) {
+    function getAddressToAmountFunded(
+        address _address
+    ) external view returns (uint256) {
         return s_addressToAmountFunded[_address];
     }
 
